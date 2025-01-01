@@ -1,11 +1,16 @@
 import { defineStore } from "pinia";
+import { v4 as uuidv4 } from "uuid";
+import { useToast } from "vue-toast-notification";
+
+const toast = useToast();
+
 export const useToDoStore = defineStore("todo", {
   state: () => ({
     todoList: [
-      { name: "Belajar HTML", isDone: false },
-      { name: "Belajar CSS", isDone: false },
-      { name: "Belajar Javascript", isDone: false },
-      { name: "Belajar PHP", isDone: false },
+      { id: 1, name: "Belajar HTML", isDone: false },
+      { id: 2, name: "Belajar CSS", isDone: false },
+      { id: 3, name: "Belajar Javascript", isDone: false },
+      { id: 4, name: "Belajar PHP", isDone: false },
     ],
   }),
   getters: {
@@ -20,20 +25,29 @@ export const useToDoStore = defineStore("todo", {
     },
   },
   actions: {
-    setAsDone(name) {
-      const todo = this.todoList.find((item) => item.name === name);
+    setAsDone(id) {
+      const todo = this.todoList.find((item) => item.id === id);
       if (todo) {
         todo.isDone = true;
+        toast.info("Todo marked as done!", {
+          position: "top-right",
+          dismissible: true,
+        });
       }
     },
-    setAsUndone(name) {
-      const todo = this.todoList.find((item) => item.name === name);
+    setAsUndone(id) {
+      const todo = this.todoList.find((item) => item.id === id);
       if (todo) {
         todo.isDone = false;
+        toast.warning("Todo marked as undone!", {
+          position: "top-right",
+          dismissible: true,
+        });
       }
     },
-    addTodo(data) {
-      let exists = this.todoList.filter((item) => item.name == data).length;
+
+    addTodo(name) {
+      const exists = this.todoList.some((item) => item.name === name);
 
       if (exists) {
         alert("New todo is existed in data!");
@@ -41,9 +55,26 @@ export const useToDoStore = defineStore("todo", {
       }
 
       this.todoList.push({
-        name: data,
+        id: uuidv4(),
+        name,
         isDone: false,
       });
+
+      toast.success("Todo added successfully!", {
+        position: "top-right",
+        dismissible: true,
+      });
+    },
+
+    removeTodo(id) {
+      this.todoList = this.todoList.filter((todo) => todo.id !== id);
+
+      if (this.todoList) {
+        toast.success("Todo deleted!", {
+          position: "top-right",
+          dismissible: true,
+        });
+      }
     },
   },
 });

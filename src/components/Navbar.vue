@@ -11,6 +11,7 @@
           to="/"
           class="text-sm font-medium hover:font-bold transition-colors"
           activeClass="font-bold text-white"
+          exact-active-class="font-bold text-white"
         >
           Home
         </RouterLink>
@@ -75,3 +76,11 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.router-link-active,
+.router-link-exact-active {
+  font-weight: bold;
+  color: white;
+}
+</style>

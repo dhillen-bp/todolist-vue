@@ -1,138 +1,126 @@
 <script setup>
 import { ref, computed } from "vue";
 import { useToDoStore } from "@/stores/todoStore";
+import ToDoList from "@/components/ToDoList.vue";
+import Swal from "sweetalert2";
 
 const todoStore = useToDoStore();
-
 const newTodo = ref("");
 const show = ref("all");
+const searchQuery = ref("");
 
 const filteredTodoList = computed(() => {
+  let todos = todoStore.showAll;
+
+  // Filter berdasarkan status done/undone
   if (show.value === "done-only") {
-    return todoStore.showDoneOnly;
+    todos = todoStore.showDoneOnly;
   } else if (show.value === "undone-only") {
-    return todoStore.showUndoneOnly;
+    todos = todoStore.showUndoneOnly;
   }
-  return todoStore.showAll;
+
+  // Filter berdasarkan pencarian
+  if (searchQuery.value) {
+    todos = todos.filter((todo) =>
+      todo.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+    );
+  }
+
+  return todos;
 });
 
 const addTodo = () => {
-  todoStore.addTodo(newTodo.value);
-  newTodo.value = "";
+  if (newTodo.value.trim() !== "") {
+    todoStore.addTodo(newTodo.value);
+    newTodo.value = "";
+    toast.success("Todo added successfully!");
+  }
 };
+
+function handleDeleteTodo(id) {
+  Swal.fire({
+    title: "Are you sure?",
+    text: "You will not be able to recover this todo!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Yes, delete it!",
+    cancelButtonText: "No, cancel!",
+  }).then((result) => {
+    if (result.isConfirmed) {
+      todoStore.removeTodo(id);
+      Swal.fire("Deleted!", "Your todo has been deleted.", "success");
+    }
+  });
+}
 </script>
 
 <template>
   <div class="max-w-[640px] mx-auto p-4 pt-10">
     <h1 class="text-3xl font-bold text-center mb-6">Halaman ToDoList</h1>
 
+    <div class="">
+      <input
+        type="text"
+        v-model="searchQuery"
+        placeholder="Cari todo..."
+        class="input-rounded w-full focus:border-emerald-600"
+      />
+
+      <hr class="border-emerald-300 border my-3" />
+    </div>
+
     <div class="flex justify-between">
-      <button @click="show = 'all'" class="btn-outline-success">
+      <button
+        @click="show = 'all'"
+        :class="{
+          'bg-blue-500 btn-outline-primary-active': show === 'all',
+          'btn-outline-primary': show !== 'all',
+        }"
+      >
         Show All
       </button>
-      <button @click="show = 'done-only'" class="btn-outline-success">
+      <button
+        @click="show = 'done-only'"
+        :class="{
+          'bg-blue-500 btn-outline-primary-active': show === 'done-only',
+          'btn-outline-primary': show !== 'done-only',
+        }"
+      >
         Done Only
       </button>
-      <button @click="show = 'undone-only'" class="btn-outline-success">
+      <button
+        @click="show = 'undone-only'"
+        :class="{
+          'bg-blue-500 btn-outline-primary-active': show === 'undone-only',
+          'btn-outline-primary': show !== 'undone-only',
+        }"
+      >
         Undone Only
       </button>
     </div>
 
     <form
-      @submit.prevent="todoStore.addTodo(newTodo)"
+      @submit.prevent="addTodo"
       class="my-6 flex justify-between items-center gap-x-6"
     >
       <input
         type="text"
         v-model="newTodo"
         placeholder="Type new todo..."
-        class="input-rounded w-full"
+        class="input-rounded w-full focus:border-emerald-600"
       />
-      <span><button type="submit" class="btn-primary">Submit</button></span>
+      <span
+        ><button type="submit" class="btn-primary text-nowrap">
+          Add todo
+        </button></span
+      >
     </form>
 
-    <!-- Show All Todolist -->
-    <div v-if="show === 'all'">
-      <ul>
-        <li v-for="list in todoStore.showAll">
-          <div class="flex justify-between w-full items-center">
-            <span>{{ list.name }}</span>
-            <span>
-              <button
-                v-if="!list.isDone"
-                @click="todoStore.setAsDone(list.name)"
-                class="btn-outline-success"
-              >
-                set as done
-              </button>
-              <button
-                v-if="list.isDone"
-                @click="todoStore.setAsUndone(list.name)"
-                class="btn-outline-success"
-              >
-                set as undone
-              </button>
-            </span>
-          </div>
-          <hr class="border-emerald-300 border mb-6 mt-2" />
-        </li>
-      </ul>
-    </div>
-
-    <!-- Show Done Only Todolist -->
-    <div v-if="show === 'done-only'">
-      <ul>
-        <li v-for="list in todoStore.showDoneOnly">
-          <div class="flex justify-between w-full items-center">
-            <span>{{ list.name }}</span>
-            <span>
-              <button
-                v-if="!list.isDone"
-                @click="todoStore.setAsDone(list.name)"
-                class="btn-outline-success"
-              >
-                set as done
-              </button>
-              <button
-                v-if="list.isDone"
-                @click="todoStore.setAsUndone(list.name)"
-                class="btn-outline-success"
-              >
-                set as undone
-              </button>
-            </span>
-          </div>
-          <hr class="border-emerald-300 border mb-6 mt-2" />
-        </li>
-      </ul>
-    </div>
-
-    <!-- Show Undone Only Todolist -->
-    <div v-if="show === 'undone-only'">
-      <ul>
-        <li v-for="(list, index) in todoStore.showUndoneOnly">
-          <div class="flex justify-between w-full items-center">
-            <span>{{ list.name }}</span>
-            <span>
-              <button
-                v-if="!list.isDone"
-                @click="todoStore.setAsDone(list.name)"
-                class="btn-outline-success"
-              >
-                set as done
-              </button>
-              <button
-                v-if="list.isDone"
-                @click="todoStore.setAsUndone(list.name)"
-                class="btn-outline-success"
-              >
-                set as undone
-              </button>
-            </span>
-          </div>
-          <hr class="border-emerald-300 border mb-6 mt-2" />
-        </li>
-      </ul>
-    </div>
+    <ToDoList
+      :todoList="filteredTodoList"
+      @set-as-done="todoStore.setAsDone"
+      @set-as-undone="todoStore.setAsUndone"
+      @delete-todo="handleDeleteTodo"
+    />
   </div>
 </template>
